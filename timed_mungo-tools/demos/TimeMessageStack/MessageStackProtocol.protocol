@@ -1,0 +1,15 @@
+typestate MessageStackProtocol {
+    Stack = {
+        Check checkForMessage(): <RECEIVED: [xm < 10, {xm}] Present, EMPTY: [xm<10] EndState>
+    }
+    Received = {
+        [xm < 10, {xm}] void answerMessage(String): Stack,
+        [xm < 5] void ignoreMessage(): Stack
+    }
+    EndState = {
+        void shutdownStack(): end
+    }
+    Present = {
+        [xm < 2] Message getMessage(): Received
+    }
+}

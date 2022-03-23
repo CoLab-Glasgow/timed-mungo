@@ -1,0 +1,13 @@
+plugins {
+    id 'org.asciidoctor.convert' 
+}
+
+asciidoctor {
+    sources {
+        include 'mungo.adoc'
+        include 'stmungo.adoc'
+
+    }
+}
+
+build.dependsOn 'asciidoctor'    

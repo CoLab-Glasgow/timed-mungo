@@ -1,0 +1,20 @@
+module demos.BuyTicket;
+
+type <java> "java.lang.String" from "java.lang.String" as String;
+type <java> "java.lang.Integer" from "java.lang.Integer" as int;
+
+global protocol BuyTicket(role Researcher, role Agent, role Finance) {
+	request(String) from Researcher to Agent;
+	quote(int) from Agent to Researcher;
+	check(int) from Researcher to Finance;
+	choice at Finance {
+		approve(int) from Finance to Researcher;
+		approve(int) from Finance to Agent;
+		ticket(String) from Agent to Researcher;
+		invoice(int) from Agent to Finance;
+		payment(int) from Finance to Agent;
+	} or {
+		refuse(String) from Finance to Researcher;
+		refuse(String) from Finance to Agent;
+	}
+}

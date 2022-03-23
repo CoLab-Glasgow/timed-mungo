@@ -1,0 +1,41 @@
+TypestateClassDecl	:	ClassDecl;
+
+TypestateDecl		:	TypeDecl	::=	InitState State*;
+
+State								::=	<ID: String> Typestate;
+InitState			:	State;
+
+abstract Typestate;
+
+TypestateMethodList	: 	Typestate	::=	TypestateMethod*;
+EndTypestate		:	Typestate;
+
+TypestateMethod		:	Typestate	::=	[TimeConstraint] TType <ID:String> TTypeList Typestate;
+TypestateSwitch		:	Typestate	::=	TypestateSwitchCase*;
+TypestateLabel		:	Typestate	::=	<Label: String>;
+
+TypestateSwitchCase					::=	<Label: String> [TimeConstraint] Typestate;
+
+TType								::=	Access;
+TTypestate			:	TType		::=	Typestate;
+
+TTypeList;
+TTypeArgs			:	TTypeList	::=	TType*;
+
+TimeConstraint                      ::= ClockConstraint [ResetPredicate];
+abstract ClockConstraint;
+
+ClockId                             ::= <ID: String>;
+ResetPredicate                      ::= ClockId*;
+
+BoolCond            : ClockConstraint ::= BooleanLiteral;
+GtCond              : ClockConstraint ::= ClockId Expr;
+EqCond              : ClockConstraint ::= ClockId Expr;
+LtCond              : ClockConstraint ::= ClockId Expr;
+LtEqCond            : ClockConstraint ::= ClockId Expr; 
+GtEqCond            : ClockConstraint ::= ClockId Expr;
+NotCond             : ClockConstraint ::= ClockConstraint;
+AndCond             : ClockConstraint ::= Left:ClockConstraint Right:ClockConstraint;
+OrCond              : ClockConstraint ::= Left:ClockConstraint Right:ClockConstraint;
+ParenCond           : ClockConstraint ::= ClockConstraint;
+//EmptyTTypeArgs	:	TTypeList;

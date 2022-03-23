@@ -1,0 +1,51 @@
+plugins {
+    id 'java'
+    id 'application'
+    id 'antlr'
+}
+
+mainClassName = 'translator.Translate'
+
+repositories {
+    mavenCentral()
+}
+
+configurations {
+    compile {
+        extendsFrom = extendsFrom.findAll { it != configurations.antlr }
+    }
+}
+
+dependencies {
+  antlr "org.antlr:antlr4:4.5.3"
+  compile "org.antlr:antlr4-runtime:4.5.3"
+  }
+
+
+
+// generateGrammarSource {
+//     maxHeapSize = "64m"
+//
+//     //Keep a copy of generated sources
+//     doLast {
+//         println "Copying generated grammar lexer/parser files to main directory."
+//         copy {
+//             from "${buildDir}/generated-src/antlr/main"
+//             into "src/main/java/genantlr"
+//         }
+//     }
+// }
+
+
+jar {
+  manifest {
+    attributes(
+      'Class-Path': configurations.compile.collect { it.getName() }.join(' '),
+      'Main-Class': 'translator.Translate'
+    )
+  }
+      from {
+          configurations.compile.collect { it.isDirectory() ? it : zipTree(it) }
+      }
+  destinationDir = rootDir
+}

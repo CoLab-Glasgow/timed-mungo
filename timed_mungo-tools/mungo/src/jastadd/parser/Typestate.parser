@@ -1,0 +1,265 @@
+// Access typestate_annotation =
+// 					AT TYPESTATE_ANNOT LPAREN STRING_LITERAL.s RPAREN  {: return new PackageAccess(s); :}
+// 					;
+// Annotation typestate_annotation =
+//   AT TYPESTATE_ANNOT LPAREN element_value RPAREN
+//   {: Annotation a = new Annotation("annotation", new PackageAccess("Typestate"), new List().add(new ElementValuePair("value", element_value)));
+//      a.setStart(AT.getStart());
+//      a.setEnd(RPAREN.getEnd());
+//      return a;
+//   :}
+//   ;
+
+// ClassDecl class_declaration	=
+// 					typestate_annotation.t
+// 					modifiers.m? CLASS IDENTIFIER super.s? interfaces.i? class_body.b
+// 					{:
+// 						return new TypestateClassDecl(new Modifiers(m), IDENTIFIER, s, i, b, t);
+// 					:}
+// 					;
+
+TypeDecl type_declaration		=
+						typestate_declaration.td	{: return td; :}
+					;
+
+TypestateDecl typestate_declaration	=
+					TYPESTATE IDENTIFIER.id LBRACE IDENTIFIER EQ typestate.t state_name_list.tnl RBRACE
+					{:
+						InitState is = new InitState(IDENTIFIER, t);
+						is.setStart(IDENTIFIER.getStart());
+						is.setEnd(IDENTIFIER.getEnd());
+						return new TypestateDecl(new Modifiers(), id, new List(), is, tnl);
+					:}
+					|
+					TYPESTATE IDENTIFIER.id LBRACE IDENTIFIER EQ typestate.t RBRACE
+					{:
+						InitState is = new InitState(IDENTIFIER, t);
+						is.setStart(IDENTIFIER.getStart());
+						is.setEnd(IDENTIFIER.getEnd());
+						return new TypestateDecl(new Modifiers(), id, new List(), is , new List<State>());
+						//TODO consider EmptyState object
+					:}
+					;
+
+List state_name_list
+					=	state_name.tn
+						{:
+							return new List<State>().add(tn);
+						:}
+					|	state_name_list.tnl state_name.tn
+						{:
+							return tnl.add(tn);
+						:}
+					;
+
+State state_name			=	IDENTIFIER.i EQ typestate.t
+						{:
+							State s = new State(i, t);
+//							s.setStart(EQ.getStart());
+							return s;
+						:}
+					;
+
+List typestate_list			=	method.m
+						{:
+							return new List<Typestate>().add(m);
+						:}
+					|	typestate_list.tl COMMA method.m
+						{:
+							return tl.add(m);
+						:}
+					;
+
+Typestate typestate			=	LBRACE typestate_list.tl RBRACE
+						{:
+							TypestateMethodList l = new TypestateMethodList(tl);
+//							l.setStart(LBRACE.getStart());
+							return l;
+						:}
+					|	LBRACE RBRACE
+						{:
+							return new EndTypestate();
+						:}
+					|	END
+						{:
+							return new EndTypestate();
+						:}
+					|	t_label.tl
+						{:
+							return tl;
+						:}
+					;
+
+TypestateMethod method			=	opt_t_constraint.tc? ttype.t IDENTIFIER.i LPAREN ttype_list.tl RPAREN COLON typestate.ts
+						{:
+							return new TypestateMethod(tc,t, i, new TTypeArgs(tl), ts);
+						:}
+					|	opt_t_constraint.tc? ttype.t IDENTIFIER.i LPAREN RPAREN COLON typestate.ts
+						{:
+							return new TypestateMethod(tc,t, i, new TTypeArgs(), ts);
+						:}
+					|	opt_t_constraint.tc? ttype.t IDENTIFIER.i LPAREN ttype_list.tl RPAREN COLON t_switch.ts
+						{:
+							return new TypestateMethod(tc,t, i, new TTypeArgs(tl), ts);
+						:}
+					|	opt_t_constraint.tc? ttype.t IDENTIFIER.i LPAREN RPAREN COLON t_switch.ts
+						{:
+							return new TypestateMethod(tc,t, i, new TTypeArgs(), ts);
+						:}
+					;
+
+TypestateSwitch t_switch		=	LT switch_case_list.scl GT
+						{:
+							TypestateSwitch ts = new TypestateSwitch(scl);
+//							ts.setStart(LT.getStart());
+							return ts;
+						:}
+					;
+
+List switch_case_list			=	switch_case.sc
+						{:
+							return new List<TypestateSwitchCase>().add(sc);
+						:}
+					|	switch_case_list.scl COMMA switch_case.sc
+						{:
+							return scl.add(sc);
+						:}
+					;
+
+TypestateSwitchCase switch_case		= IDENTIFIER.i COLON opt_t_constraint.tc? typestate.t
+						{:
+							return new TypestateSwitchCase(i, tc, t);
+						:}
+					;
+
+
+TypestateLabel t_label			=	IDENTIFIER
+						{:
+							TypestateLabel t = new TypestateLabel(IDENTIFIER);
+//							t.setStart(IDENTIFIER.getStart());
+							return t;
+						:}
+					;
+
+TType ttype				=	type.a LT typestate.t GT
+						{:
+							TTypestate tt = new TTypestate(a, t);
+//							tt.setStart(LT.getStart());
+							return tt;
+						:}
+					|	type.a
+						{:
+							return new TType(a);
+						:}
+					|	VOID
+						{:
+							return new TType(new PrimitiveTypeAccess("void"));
+						:}
+					;
+
+
+List ttype_list				=	ttype.t
+						{:
+							return new List<TType>().add(t);
+						:}
+					|	ttype_list.tl COMMA ttype.t
+						{:
+							return tl.add(t);
+						:}
+					;
+
+Opt opt_t_constraint					= LBRACK t_constraint RBRACK
+						{:
+							return new Opt(t_constraint);
+						:}
+					;
+
+TimeConstraint t_constraint				=  c_constraint.c opt_r_pred.r?  
+						{: 
+							TimeConstraint tc = new TimeConstraint(c, r);
+							return tc;
+						:}
+					;
+
+Opt opt_r_pred 							= COMMA r_pred 
+						{: 
+							return new Opt(r_pred); 
+						:} 
+					;
+
+ResetPredicate r_pred 						= LBRACE r_pred_list.list RBRACE
+						{:
+							return new ResetPredicate(list);
+						:}
+					;
+
+List r_pred_list 							= clock_id.cid 
+						{: 
+							return new List<ClockId>().add(cid);
+						:}
+					| 	r_pred_list.lst COMMA clock_id.cid 
+						{:
+							return lst.add(cid);
+						:}
+					;
+
+ClockId clock_id                        = IDENTIFIER.id 
+						{:
+							return new ClockId(id);
+						:}
+					;
+
+
+ClockConstraint c_constraint			= BOOLEAN_LITERAL.bl
+						{:
+							return new BoolCond(new BooleanLiteral(bl));
+						:}
+					|	clock_id.cid GT literal.l
+						{:
+							return new GtCond(cid, l);
+						:}
+					|   clock_id.cid LT literal.l
+						{: 
+							return new LtCond(cid, l);
+						:}
+					|	clock_id.cid EQ literal.l
+						{:
+							return new EqCond(cid, l);
+						:}
+					|	clock_id.cid LTEQ literal.l 
+						{:
+							return new LtEqCond(cid, l);
+						:}
+					|	clock_id.cid GTEQ literal.l 
+						{:
+							return new GtEqCond(cid, l);
+						:}
+					|	NOT c_constraint.c
+						{:
+							return new NotCond(c);
+						:}
+					|	c_constraint.left AND c_constraint.right 
+						{:
+							return new AndCond(left, right);
+						:}
+					|	c_constraint.left OR c_constraint.right
+						{:
+							return new OrCond(left, right);
+						:}
+					| 	LPAREN c_constraint.c RPAREN
+						{:
+							return new ParenCond(c);
+						:}
+					;
+
+ExprStmt statement_expression 			= delay_stmt.dst 	
+						{: 
+							return dst; 
+						:} 
+					;
+
+Delay delay_stmt 						= TSDELAY LPAREN literal.l RPAREN
+						{:
+							return new Delay(l);
+						:}
+					;

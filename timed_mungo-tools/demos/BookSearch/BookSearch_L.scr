@@ -1,0 +1,21 @@
+module demos.BookSearch.BookSearch_L;
+
+local protocol BookSearch_L(role U, role S, self L) {
+    rec Loop{
+        choice at U{
+            [@L:xl>12, reset(xl)]
+            addBook(Book) from U;
+        } or {
+            [@L:xl>12, reset(xl)]
+            skipBook() from U;
+        }
+        choice at U{
+            [@L:xl>=14, reset(xl)]
+            moreBooks(String) from U;
+            continue Loop;
+        } or {
+            [@L:xl>=14]
+            end() from U; 
+        } 
+    }
+}

@@ -1,0 +1,191 @@
+aspect Time{
+    coll Set<Delay> MethodDecl.getDelays() [new HashSet<Delay>()] with add root MethodDecl;
+    Delay contributes this to MethodDecl.getDelays() for getMethodDeclAncestor();
+
+    coll Set<String> TypestateDecl.getClocks() [new HashSet<String>()] with add root TypestateDecl;
+    ClockId contributes getID() to TypestateDecl.getClocks() for getTypestateDeclAncestor();
+
+    inh TypestateDecl ClockId.getTypestateDeclAncestor();
+    
+    eq Delay.getGraph(Set<TypestateVar> env){
+        GraphNode n = new DelayNode(getExpr());
+        for(TypestateVar v: env){
+          if(!(v.current instanceof EndNode))
+            v.current = n.addNext(v.current);
+        }
+    
+        return true;
+      }
+
+    syn String ResetPredicate.toString(){
+      String ret ="";
+      ret += "{";
+      int i;
+      for(i =0; i < getNumClockId()-1; i++){
+        ret += getClockId(i).getID().toString();
+        ret +=", ";
+      }
+      ret += getClockId(i).getID().toString();
+      ret+="}";
+      return ret;
+    } 
+
+    syn String LtCond.toString(){
+      return getClockId().getID() + " < " + getExpr().toString();
+    }
+
+    syn String GtCond.toString(){
+      return getClockId().getID() + " > " + getExpr().toString();
+    }
+
+    syn String EqCond.toString(){
+      return getClockId().getID() + " = " + getExpr().toString();
+    }
+
+    syn String LtEqCond.toString(){
+      return getClockId().getID() + " <= " + getExpr().toString();
+    }
+
+    syn String GtEqCond.toString(){
+      return getClockId().getID() + " <= " + getExpr().toString();
+    }
+
+    syn String BoolCond.toString(){
+      return getBooleanLiteral().toString();
+    }
+
+    syn String NotCond.toString(){
+      return "!"+getClockConstraint().toString();
+    }
+
+    syn String AndCond.toString(){
+      return getLeft().toString() +" & "+getRight().toString();
+    }
+
+    syn String OrCond.toString(){
+      return getLeft().toString() +" | "+getRight().toString();
+    }
+
+    syn String ParenCond.toString(){
+      return "("+getClockConstraint().toString()+")";
+    }
+
+    syn String TimeConstraint.toString(){
+      String ret ="[";
+      ClockConstraint cc = getClockConstraint();
+      ret = ret + cc.toString();
+
+      ResetPredicate rp = getResetPredicate();
+      if(rp != null){
+        ret = ret + ", ";
+        ret = ret + rp.toString();
+      }
+
+      ret = ret + "]";
+
+      return ret;
+    }
+
+    // Simple equals method, more work can be done to ensure slight variations that are the same also return true
+    // i.e. 'true | false' == 'false | true' or a different ordering of lists
+    syn boolean TimeConstraint.equals(TimeConstraint tc) {
+      boolean ccEqual = true;
+      boolean rpEqual = true;
+      if(getClockConstraint() != null)
+        ccEqual = getClockConstraint().toString().equals(tc.getClockConstraint().toString());
+      if(getResetPredicate() != null)
+        rpEqual = getResetPredicate().equals(tc.getResetPredicate());
+        
+      return ccEqual && rpEqual;
+    }
+
+    syn boolean ResetPredicate.equals(ResetPredicate rp){
+      return toString().equals(rp.toString());
+    }
+
+    syn boolean ClockId.equals(ClockId cid) {
+      return getID() == cid.getID();
+    }
+
+    syn boolean ClockConstraint.ConstraintHolds(HashMap<String, Double> clocks);
+
+    eq BoolCond.ConstraintHolds(HashMap<String, Double> clocks){
+      return Boolean.parseBoolean(getBooleanLiteral().toString());
+    }
+
+    eq GtCond.ConstraintHolds(HashMap<String, Double> clocks){
+      String clockId = getClockId().getID();
+      double literal = Double.parseDouble(getExpr().toString());
+
+      if(clocks.containsKey(clockId)){
+        double clockTime = clocks.get(clockId);
+        return clockTime > literal;
+      } else {
+        return false;
+      }
+    }
+
+    eq LtCond.ConstraintHolds(HashMap<String, Double> clocks){
+      String clockId = getClockId().getID();
+      double literal = Double.parseDouble(getExpr().toString());
+
+      if(clocks.containsKey(clockId)){
+        double clockTime = clocks.get(clockId);
+        return clockTime < literal;
+      } else {
+        return false;
+      }
+    }
+
+    eq EqCond.ConstraintHolds(HashMap<String, Double> clocks){
+      String clockId = getClockId().getID();
+      double literal = Double.parseDouble(getExpr().toString());
+
+      if(clocks.containsKey(clockId)){
+        double clockTime = clocks.get(clockId);
+        return clockTime == literal;
+      } else {
+        return false;
+      }
+    }
+
+    eq LtEqCond.ConstraintHolds(HashMap<String, Double> clocks){
+      String clockId = getClockId().getID();
+      double literal = Double.parseDouble(getExpr().toString());
+
+      if(clocks.containsKey(clockId)){
+        double clockTime = clocks.get(clockId);
+        return clockTime <= literal;
+      } else {
+        return false;
+      }
+    }
+
+    eq GtEqCond.ConstraintHolds(HashMap<String, Double> clocks){
+      String clockId = getClockId().getID();
+      double literal = Double.parseDouble(getExpr().toString());
+
+      if(clocks.containsKey(clockId)){
+        double clockTime = clocks.get(clockId);
+        return clockTime >= literal;
+      } else {
+        return false;
+      }
+    }
+
+    eq NotCond.ConstraintHolds(HashMap<String, Double> clocks){
+      return !getClockConstraint().ConstraintHolds(clocks);
+    }
+
+    eq AndCond.ConstraintHolds(HashMap<String, Double> clocks){
+      return getLeft().ConstraintHolds(clocks) && getRight().ConstraintHolds(clocks);
+    }
+
+    eq OrCond.ConstraintHolds(HashMap<String, Double> clocks){
+      return getLeft().ConstraintHolds(clocks) || getRight().ConstraintHolds(clocks);
+    }
+
+    eq ParenCond.ConstraintHolds(HashMap<String, Double> clocks){
+      return getClockConstraint().ConstraintHolds(clocks);
+    }
+}

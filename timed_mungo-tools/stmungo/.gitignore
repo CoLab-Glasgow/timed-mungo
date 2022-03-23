@@ -1,0 +1,38 @@
+### Java ###
+# Compiled class file
+*.class
+
+# Log file
+*.log
+
+
+# Package Files #
+*.jar
+*.war
+*.nar
+*.ear
+*.zip
+*.tar.gz
+*.rar
+
+# Ant build folders
+build/
+dist/
+bin/
+user.build.properties
+
+# MacOSX files
+.DS_Store
+
+# IntelliJ projects
+*.iws
+*.iml
+.idea/
+
+# Generated files
+/out/
+/gen/
+/gen4/
+/tool/playground/
+tmp/
+src/main/java/org/stmungo/genantlr/

@@ -1,0 +1,50 @@
+aspect typestateCheck {
+	protected void ClassDecl.typestateCheck() {
+		getGraph();
+
+		if(hasSuperclass() && this.superclass().isTypestateClassDeclType()){
+			GraphNode t_1 = superclass().getTypestateDecl().createTypestate().normalise();
+			GraphNode t_2 = getTypestateDecl().createTypestate().normalise();
+			if(!t_2.includes(t_1, null)) {
+				addSemanticError("The typestate of a subclass should be a subtype of the superclass typestate");
+			}
+		}
+	}
+
+	protected void Declarator.typestateCheck() {
+		if(getTypeAccess().lookupTSType() != null && getTypeAccess().lookupTSType().isTypestateClassDeclType()) {
+			typestate.reportErrors("Object reference is used uninitialised.");
+			if(getTypeAccess().lookupTSType().getTypestateDecl() != null) {
+				GraphNode t = getTypeAccess().lookupTSType().getTypestateDecl().createTypestate().normalise();
+				// The eqv of init(v)
+				HashMap<String, Double> clocks = new HashMap<>(); 
+				for (String clock : getTypeAccess().lookupTSType().getTypestateDecl().getClocks()){
+					clocks.put(clock, 0.0);
+				}
+				typestate.checkTypestate(t, "The typestate of the created object does not match its declared typestate.", clocks);
+			}
+		}
+	}
+
+	protected void ParameterDeclaration.typestateCheck() {
+		if(getTypeAccess().lookupTSType() != null && getTypeAccess().lookupTSType().isTypestateClassDeclType()) {
+			typestate.reportErrors("Object reference is used uninitialised");
+			if(getTypeAccess().lookupTSType().getTypestateDecl() != null) {
+				GraphNode t = getTypeAccess().lookupTSType().getTypestateDecl().createTypestate().normalise();
+				typestate.checkTypestate(t, "The typestate of the created object does not match its declared typestate.", null);
+			}
+		}
+	}
+/*
+	protected void MethodAccess.typestateCheck() {
+		MethodDecl md= lookupMethod(name());		//TODO get a lookupMethod()
+		if(md != null && md.isTypestateMethod()) {
+			GraphNode t = md.getTypestateMethod().getTType().createTypestate();
+			if(t != null) {
+				t.normalise();
+				typestate.checkTypestate(t, "The typestate of the returned object does not match the return typestate.");
+			}
+		}
+	}
+*/
+}
